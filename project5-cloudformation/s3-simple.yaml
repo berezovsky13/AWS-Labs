@@ -1,0 +1,5 @@
+Resources:
+  MySimpleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: my-unique-bucket-name-12345

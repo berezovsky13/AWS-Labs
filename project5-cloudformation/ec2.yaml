@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Launch a basic EC2 instance
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair
+    Type: AWS::EC2::KeyPair::KeyName
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-0c7217cdde317cfec  # Amazon Linux 2023 in us-east-1
+      Tags:
+        - Key: Name
+          Value: MyFirstEC2
+
+Outputs:
+  InstanceId:
+    Description: ID of the EC2 instance
+    Value: !Ref MyEC2Instance

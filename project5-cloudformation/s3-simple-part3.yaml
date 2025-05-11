@@ -1,0 +1,10 @@
+Resources:
+  MySimpleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub my-bucket-${AWS::StackName}-${AWS::AccountId}
+
+Outputs:
+  BucketNameOutput:
+    Description: The name of the created S3 bucket
+    Value: !Ref MySimpleBucket
