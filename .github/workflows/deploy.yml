@@ -16,22 +16,22 @@ jobs:
     - name: Setup SSH
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
-        chmod 600 ~/.ssh/ec2.pem
+        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/demo.pem
+        chmod 600 ~/.ssh/demo.pem
         echo "Host ec2
           HostName ${{ secrets.EC2_HOST }}
           User ${{ secrets.EC2_USERNAME }}
-          IdentityFile ~/.ssh/ec2.pem
+          IdentityFile ~/.ssh/demo.pem
           StrictHostKeyChecking no" > ~/.ssh/config
         chmod 600 ~/.ssh/config
 
     - name: Copy files to EC2
       run: |
-        scp -i ~/.ssh/ec2.pem -r app/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
+        scp -i ~/.ssh/demo.pem -r app/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
 
     - name: Deploy to EC2
       run: |
-        ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
+        ssh -i ~/.ssh/demo.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
           # Create app directory if it doesn't exist
           sudo mkdir -p /home/ubuntu/app
           
