@@ -13,18 +13,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-
     - name: Setup SSH
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
+        # Convert the key to the correct format
+        echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/ec2.pem
         chmod 600 ~/.ssh/ec2.pem
+        # Test SSH connection
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
         cat >>~/.ssh/config <<END
         Host ec2
           HostName ${{ secrets.EC2_HOST }}
@@ -32,14 +28,18 @@ jobs:
           IdentityFile ~/.ssh/ec2.pem
           StrictHostKeyChecking no
         END
+        # Debug: Check if key file exists and has correct permissions
+        ls -la ~/.ssh/
+        # Test SSH connection
+        ssh -v -i ~/.ssh/ec2.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'echo "SSH connection successful"'
 
     - name: Copy files to EC2
       run: |
-        scp -r app/* ec2:/tmp/app/
+        scp -v -i ~/.ssh/ec2.pem -r app/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
 
     - name: Deploy to EC2
       run: |
-        ssh ec2 '
+        ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
           # Create app directory if it doesn't exist
           sudo mkdir -p /home/ubuntu/app
           
