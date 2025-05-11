@@ -35,17 +35,28 @@ jobs:
         echo "Testing SSH connection..."
         ssh -v -i ~/.ssh/demo.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'echo "SSH connection successful"' || true
 
-    - name: Create remote directory and copy files
+    - name: Prepare and copy files
       run: |
-        # Create remote directory
-        ssh -i ~/.ssh/demo.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'mkdir -p /tmp/app'
+        # Debug: Show current directory structure
+        echo "Current directory structure:"
+        ls -la
         
-        # List local files before copying
-        echo "Local files to be copied:"
+        # Debug: Show app directory contents
+        echo "App directory contents:"
         ls -la app/
         
-        # Copy files with verbose output
-        scp -v -i ~/.ssh/demo.pem -r app/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
+        # Create remote directory
+        ssh -i ~/.ssh/demo.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'rm -rf /tmp/app && mkdir -p /tmp/app'
+        
+        # Copy each file individually
+        scp -i ~/.ssh/demo.pem app/app.js ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
+        scp -i ~/.ssh/demo.pem app/package.json ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
+        scp -i ~/.ssh/demo.pem app/node-app.service ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
+        
+        # Copy public directory if it exists
+        if [ -d "app/public" ]; then
+          scp -i ~/.ssh/demo.pem -r app/public ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
+        fi
         
         # Verify files were copied
         echo "Verifying files on remote server:"
