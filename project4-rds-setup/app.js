@@ -26,6 +26,19 @@ connection.connect((err) => {
 // Middleware to parse JSON bodies
 app.use(express.json());
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Welcome to the RDS Node.js API',
+    endpoints: {
+      root: 'GET /',
+      health: 'GET /health',
+      getUsers: 'GET /users',
+      createUser: 'POST /users'
+    }
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy' });
@@ -66,6 +79,6 @@ app.post('/users', (req, res) => {
 });
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running at http://0.0.0.0:${port}`);
 }); 
