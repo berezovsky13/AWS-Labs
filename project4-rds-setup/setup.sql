@@ -1,8 +1,8 @@
 -- Create database if it doesn't exist
-CREATE DATABASE IF NOT EXISTS testdb;
+CREATE DATABASE IF NOT EXISTS database-1;
 
 -- Use the database
-USE testdb;
+USE database-1;
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (

@@ -8,8 +8,14 @@ const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'admin',
   password: process.env.DB_PASSWORD || 'password',
-  database: process.env.DB_NAME || 'testdb'
+  database: process.env.DB_NAME || 'database-1'
 };
+
+console.log('Database configuration:', {
+  host: dbConfig.host,
+  user: dbConfig.user,
+  database: dbConfig.database
+});
 
 // Create database connection
 const connection = mysql.createConnection(dbConfig);
@@ -21,6 +27,26 @@ connection.connect((err) => {
     return;
   }
   console.log('Connected to database successfully');
+  
+  // Test the connection with a simple query
+  connection.query('SHOW TABLES', (err, results) => {
+    if (err) {
+      console.error('Error checking tables:', err);
+      return;
+    }
+    console.log('Available tables:', results);
+  });
+});
+
+// Handle database connection errors
+connection.on('error', (err) => {
+  console.error('Database error:', err);
+  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+    console.log('Attempting to reconnect to database...');
+    connection.connect();
+  } else {
+    throw err;
+  }
 });
 
 // Middleware to parse JSON bodies
@@ -92,6 +118,9 @@ app.get('/', (req, res) => {
             async function loadUsers() {
                 try {
                     const response = await fetch('/users');
+                    if (!response.ok) {
+                        throw new Error('Failed to load users: ' + response.status);
+                    }
                     const users = await response.json();
                     const usersList = document.getElementById('usersList');
                     usersList.innerHTML = users.map(user => 
@@ -102,6 +131,10 @@ app.get('/', (req, res) => {
                     ).join('');
                 } catch (error) {
                     console.error('Error loading users:', error);
+                    document.getElementById('usersList').innerHTML = 
+                        '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">' +
+                        'Error loading users. Please try again later.' +
+                        '</div>';
                 }
             }
 
@@ -151,12 +184,14 @@ app.get('/health', (req, res) => {
 
 // Get all users
 app.get('/users', (req, res) => {
+  console.log('Fetching users...');
   connection.query('SELECT * FROM users', (err, results) => {
     if (err) {
       console.error('Error querying database:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Database error: ' + err.message });
       return;
     }
+    console.log('Users fetched successfully:', results);
     res.json(results);
   });
 });
@@ -169,15 +204,17 @@ app.post('/users', (req, res) => {
     return;
   }
 
+  console.log('Creating new user:', { name, email });
   connection.query(
     'INSERT INTO users (name, email) VALUES (?, ?)',
     [name, email],
     (err, results) => {
       if (err) {
         console.error('Error inserting into database:', err);
-        res.status(500).json({ error: 'Database error' });
+        res.status(500).json({ error: 'Database error: ' + err.message });
         return;
       }
+      console.log('User created successfully:', results);
       res.status(201).json({ id: results.insertId, name, email });
     }
   );
