@@ -12,8 +12,8 @@ const dbConfig = {
   database: process.env.DB_NAME || 'documentdb-demo'
 };
 
-// Create MongoDB connection string
-const connectionString = `mongodb://${dbConfig.user}:${dbConfig.password}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false`;
+// Create MongoDB connection string with correct format for DocumentDB
+const connectionString = `mongodb://${dbConfig.user}:${encodeURIComponent(dbConfig.password)}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false`;
 
 console.log('Database configuration:', {
   host: dbConfig.host,
@@ -27,17 +27,17 @@ mongoose.connect(connectionString, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   ssl: true,
-  sslValidate: false, // Required for DocumentDB
-  sslCA: process.env.CA_CERT_PATH, // Path to CA certificate if needed
-  serverSelectionTimeoutMS: 30000, // Increase timeout to 30 seconds
-  socketTimeoutMS: 45000, // Increase socket timeout
-  connectTimeoutMS: 30000, // Increase connection timeout
-  maxPoolSize: 10, // Maximum number of connections in the pool
-  minPoolSize: 5, // Minimum number of connections in the pool
-  retryWrites: false, // Required for DocumentDB
+  sslValidate: true,
+  sslCA: process.env.CA_CERT_PATH,
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 30000,
+  maxPoolSize: 10,
+  minPoolSize: 5,
+  retryWrites: false,
   retryReads: true,
-  w: 'majority', // Write concern
-  wtimeoutMS: 25000 // Write concern timeout
+  w: 'majority',
+  wtimeoutMS: 25000
 })
 .then(() => {
   console.log('Connected to DocumentDB successfully');
