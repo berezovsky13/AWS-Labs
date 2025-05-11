@@ -1,0 +1,3 @@
+This is an object inside the S3 bucket.
+This file was created to demonstrate S3 upload functionality.
+You can use this as a template for uploading other files to your S3 bucket. 
