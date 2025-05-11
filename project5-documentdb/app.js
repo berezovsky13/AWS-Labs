@@ -5,12 +5,21 @@ const port = 3000;
 
 // DocumentDB connection configuration
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 27017,
-  user: process.env.DB_USER || 'admin',
-  password: process.env.DB_PASSWORD || 'password',
-  database: process.env.DB_NAME || 'documentdb-demo'
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
 };
+
+// Validate required environment variables
+const requiredEnvVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'CA_CERT_PATH'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars);
+  process.exit(1);
+}
 
 // Create MongoDB connection string with correct format for DocumentDB
 const connectionString = `mongodb://${dbConfig.user}:${encodeURIComponent(dbConfig.password)}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false`;
@@ -19,7 +28,8 @@ console.log('Database configuration:', {
   host: dbConfig.host,
   port: dbConfig.port,
   user: dbConfig.user,
-  database: dbConfig.database
+  database: dbConfig.database,
+  caCertPath: process.env.CA_CERT_PATH
 });
 
 // Connect to DocumentDB with improved options
@@ -27,8 +37,8 @@ mongoose.connect(connectionString, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   ssl: true,
-  sslValidate: true,
-  sslCA: process.env.CA_CERT_PATH,
+  tlsAllowInvalidCertificates: false,
+  tlsCAFile: process.env.CA_CERT_PATH,
   serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
   connectTimeoutMS: 30000,
@@ -46,6 +56,7 @@ mongoose.connect(connectionString, {
   console.error('Error connecting to DocumentDB:', err);
   console.error('Connection string (without password):', connectionString.replace(dbConfig.password, '****'));
   console.error('SSL CA Path:', process.env.CA_CERT_PATH);
+  process.exit(1); // Exit if we can't connect to the database
 });
 
 // Handle connection events
