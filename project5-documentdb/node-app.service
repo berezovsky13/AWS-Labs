@@ -14,7 +14,7 @@ Environment=DB_HOST=docdb-2025-05-11-14-04-57.cluster-ctoc2qsmye19.us-east-1.doc
 Environment=DB_PORT=27017
 Environment=DB_USER=daniel
 Environment=DB_PASSWORD=12345678
-Environment=DB_NAME=documentdb-demo
+Environment=DB_NAME=myapp
 Environment=CA_CERT_PATH=/home/ubuntu/AWS-Labs/project5-documentdb/global-bundle.pem
 Environment=NODE_OPTIONS="--max-old-space-size=512"
 

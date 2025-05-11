@@ -22,7 +22,7 @@ if (missingEnvVars.length > 0) {
 }
 
 // Create MongoDB connection string with correct format for DocumentDB
-const connectionString = `mongodb://${dbConfig.user}:${encodeURIComponent(dbConfig.password)}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false`;
+const connectionString = `mongodb://${dbConfig.user}:${encodeURIComponent(dbConfig.password)}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false&directConnection=true`;
 
 console.log('Database configuration:', {
   host: dbConfig.host,
@@ -39,15 +39,17 @@ mongoose.connect(connectionString, {
   ssl: true,
   tlsAllowInvalidCertificates: false,
   tlsCAFile: process.env.CA_CERT_PATH,
-  serverSelectionTimeoutMS: 30000,
+  serverSelectionTimeoutMS: 60000,
   socketTimeoutMS: 45000,
-  connectTimeoutMS: 30000,
+  connectTimeoutMS: 60000,
   maxPoolSize: 10,
   minPoolSize: 5,
   retryWrites: false,
   retryReads: true,
   w: 'majority',
-  wtimeoutMS: 25000
+  wtimeoutMS: 25000,
+  directConnection: true,
+  replicaSet: 'rs0'
 })
 .then(() => {
   console.log('Connected to DocumentDB successfully');
@@ -56,7 +58,7 @@ mongoose.connect(connectionString, {
   console.error('Error connecting to DocumentDB:', err);
   console.error('Connection string (without password):', connectionString.replace(dbConfig.password, '****'));
   console.error('SSL CA Path:', process.env.CA_CERT_PATH);
-  process.exit(1); // Exit if we can't connect to the database
+  process.exit(1);
 });
 
 // Handle connection events
