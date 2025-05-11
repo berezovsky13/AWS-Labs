@@ -1,63 +1,88 @@
-# AWS RDS Database Setup Project
+# RDS Node.js Application
 
-This project demonstrates how to set up and manage Amazon RDS databases using AWS CLI and bash scripts.
+This project demonstrates how to connect a Node.js application to an Amazon RDS MySQL database.
 
 ## Prerequisites
-- AWS CLI installed and configured
-- AWS account with appropriate permissions
-- Basic knowledge of database concepts
-- VPC and subnet configuration
 
-## Project Structure
-```
-project4-rds-setup/
-├── README.md
-├── scripts/
-│   ├── create-db-instance.sh
-│   ├── create-db-snapshot.sh
-│   ├── restore-db-instance.sh
-│   └── delete-db-instance.sh
-├── sql/
-│   ├── init.sql
-│   └── sample-data.sql
-└── config/
-    ├── parameter-group.json
-    └── option-group.json
-```
+- Node.js installed on your EC2 instance
+- MySQL RDS instance running
+- Security group configured to allow MySQL traffic (port 3306)
 
-## Scripts Description
+## Setup Instructions
 
-1. `create-db-instance.sh`: Creates a new RDS database instance
-2. `create-db-snapshot.sh`: Creates a snapshot of the database
-3. `restore-db-instance.sh`: Restores a database from a snapshot
-4. `delete-db-instance.sh`: Deletes a database instance
+1. Create an RDS MySQL instance in AWS:
+   - Choose MySQL as the engine
+   - Select appropriate instance size
+   - Configure security group to allow MySQL traffic
+   - Note down the endpoint, username, and password
 
-## Usage
+2. Set up the database:
+   ```bash
+   mysql -h your-rds-endpoint -u admin -p < setup.sql
+   ```
 
-1. Make sure you have AWS credentials configured:
-```bash
-aws configure
-```
+3. Install Node.js dependencies:
+   ```bash
+   npm install
+   ```
 
-2. Make scripts executable:
-```bash
-chmod +x scripts/*.sh
-```
+4. Configure environment variables:
+   - Update the `node-app.service` file with your RDS endpoint and credentials
+   - Or set environment variables directly:
+     ```bash
+     export DB_HOST=your-rds-endpoint
+     export DB_USER=admin
+     export DB_PASSWORD=your-password
+     export DB_NAME=testdb
+     ```
 
-3. Run the scripts as needed:
-```bash
-./scripts/create-db-instance.sh <db-instance-id> <db-name> <master-username> <master-password>
-./scripts/create-db-snapshot.sh <db-instance-id> <snapshot-id>
-./scripts/restore-db-instance.sh <snapshot-id> <new-db-instance-id>
-./scripts/delete-db-instance.sh <db-instance-id>
-```
+5. Start the application:
+   ```bash
+   # For testing
+   npm start
 
-## Security Best Practices
-- Use strong passwords
-- Enable encryption at rest
-- Configure security groups properly
-- Use private subnets
-- Enable automated backups
-- Use parameter groups for configuration
-- Enable monitoring and logging
-- Implement proper access controls 
+   # For production (using systemd)
+   sudo cp node-app.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable node-app
+   sudo systemctl start node-app
+   ```
+
+## API Endpoints
+
+- `GET /health` - Health check endpoint
+- `GET /users` - Get all users
+- `POST /users` - Create a new user
+  ```json
+  {
+    "name": "John Doe",
+    "email": "john@example.com"
+  }
+  ```
+
+## Security Considerations
+
+1. Never commit sensitive information like database credentials
+2. Use environment variables for configuration
+3. Ensure RDS security group only allows traffic from your EC2 instance
+4. Use strong passwords for database access
+5. Consider using AWS Secrets Manager for credential management
+
+## Troubleshooting
+
+1. Check application logs:
+   ```bash
+   sudo journalctl -u node-app
+   ```
+
+2. Verify database connection:
+   ```bash
+   mysql -h your-rds-endpoint -u admin -p
+   ```
+
+3. Check security group settings in AWS Console
+
+4. Verify environment variables:
+   ```bash
+   sudo systemctl status node-app
+   ``` 

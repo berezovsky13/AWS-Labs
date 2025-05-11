@@ -1,16 +1,14 @@
 {
-  "name": "simple-node-app",
+  "name": "rds-node-app",
   "version": "1.0.0",
-  "description": "Simple Node.js application deployed to EC2",
+  "description": "Node.js application connecting to RDS MySQL",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "express": "^4.18.2"
-  },
-  "engines": {
-    "node": ">=14.0.0"
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0"
   }
 } 
