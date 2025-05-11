@@ -5,10 +5,10 @@ const port = 3000;
 
 // Database connection configuration
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'admin',
-  password: process.env.DB_PASSWORD || 'password',
-  database: process.env.DB_NAME || 'database-1'
+  host: 'database-1.ctoc2qsmye19.us-east-1.rds.amazonaws.com',
+  user: 'admin',
+  password: '12345678',
+  database: 'database-1'
 };
 
 console.log('Database configuration:', {
