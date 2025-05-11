@@ -18,16 +18,26 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/demo.pem
         chmod 600 ~/.ssh/demo.pem
+        
+        # Add host key to known_hosts
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+        
+        # Create SSH config
         echo "Host ec2
           HostName ${{ secrets.EC2_HOST }}
           User ${{ secrets.EC2_USERNAME }}
           IdentityFile ~/.ssh/demo.pem
-          StrictHostKeyChecking no" > ~/.ssh/config
+          StrictHostKeyChecking no
+          UserKnownHostsFile ~/.ssh/known_hosts" > ~/.ssh/config
         chmod 600 ~/.ssh/config
+        
+        # Debug information
+        echo "Testing SSH connection..."
+        ssh -v -i ~/.ssh/demo.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'echo "SSH connection successful"' || true
 
     - name: Copy files to EC2
       run: |
-        scp -i ~/.ssh/demo.pem -r app/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
+        scp -v -i ~/.ssh/demo.pem -r app/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
 
     - name: Deploy to EC2
       run: |
