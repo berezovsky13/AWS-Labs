@@ -16,26 +16,18 @@ jobs:
     - name: Setup SSH
       run: |
         mkdir -p ~/.ssh
-        # Convert the key to the correct format
-        echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/ec2.pem
+        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
         chmod 600 ~/.ssh/ec2.pem
-        # Test SSH connection
-        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-        cat >>~/.ssh/config <<END
-        Host ec2
+        echo "Host ec2
           HostName ${{ secrets.EC2_HOST }}
           User ${{ secrets.EC2_USERNAME }}
           IdentityFile ~/.ssh/ec2.pem
-          StrictHostKeyChecking no
-        END
-        # Debug: Check if key file exists and has correct permissions
-        ls -la ~/.ssh/
-        # Test SSH connection
-        ssh -v -i ~/.ssh/ec2.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'echo "SSH connection successful"'
+          StrictHostKeyChecking no" > ~/.ssh/config
+        chmod 600 ~/.ssh/config
 
     - name: Copy files to EC2
       run: |
-        scp -v -i ~/.ssh/ec2.pem -r app/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
+        scp -i ~/.ssh/ec2.pem -r app/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/app/
 
     - name: Deploy to EC2
       run: |
