@@ -8,12 +8,15 @@ User=ubuntu
 WorkingDirectory=/home/ubuntu/AWS-Labs/project5-documentdb
 ExecStart=/usr/bin/node app.js
 Restart=on-failure
+RestartSec=10
+Environment=NODE_ENV=production
 Environment=DB_HOST=your-documentdb-endpoint
 Environment=DB_PORT=27017
 Environment=DB_USER=admin
 Environment=DB_PASSWORD=your-password
 Environment=DB_NAME=documentdb-demo
 Environment=CA_CERT_PATH=/home/ubuntu/rds-combined-ca-bundle.pem
+Environment=NODE_OPTIONS="--max-old-space-size=512"
 
 [Install]
 WantedBy=multi-user.target 

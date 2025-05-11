@@ -22,19 +22,43 @@ console.log('Database configuration:', {
   database: dbConfig.database
 });
 
-// Connect to DocumentDB
+// Connect to DocumentDB with improved options
 mongoose.connect(connectionString, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   ssl: true,
   sslValidate: false, // Required for DocumentDB
-  sslCA: process.env.CA_CERT_PATH // Path to CA certificate if needed
+  sslCA: process.env.CA_CERT_PATH, // Path to CA certificate if needed
+  serverSelectionTimeoutMS: 30000, // Increase timeout to 30 seconds
+  socketTimeoutMS: 45000, // Increase socket timeout
+  connectTimeoutMS: 30000, // Increase connection timeout
+  maxPoolSize: 10, // Maximum number of connections in the pool
+  minPoolSize: 5, // Minimum number of connections in the pool
+  retryWrites: false, // Required for DocumentDB
+  retryReads: true,
+  w: 'majority', // Write concern
+  wtimeoutMS: 25000 // Write concern timeout
 })
 .then(() => {
   console.log('Connected to DocumentDB successfully');
 })
 .catch((err) => {
   console.error('Error connecting to DocumentDB:', err);
+  console.error('Connection string (without password):', connectionString.replace(dbConfig.password, '****'));
+  console.error('SSL CA Path:', process.env.CA_CERT_PATH);
+});
+
+// Handle connection events
+mongoose.connection.on('connected', () => {
+  console.log('Mongoose connected to DocumentDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('Mongoose connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('Mongoose disconnected from DocumentDB');
 });
 
 // Define User Schema
@@ -177,31 +201,47 @@ app.get('/', (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy' });
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.json({ 
+    status: 'healthy',
+    database: dbStatus,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Get all users
 app.get('/users', async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Database not connected');
+    }
+
     console.log('Fetching users...');
     const users = await User.find().sort({ createdAt: -1 });
     console.log('Users fetched successfully:', users);
     res.json(users);
   } catch (err) {
     console.error('Error querying database:', err);
-    res.status(500).json({ error: 'Database error: ' + err.message });
+    res.status(500).json({ 
+      error: 'Database error: ' + err.message,
+      details: err.stack
+    });
   }
 });
 
 // Create a new user
 app.post('/users', async (req, res) => {
-  const { name, email } = req.body;
-  if (!name || !email) {
-    res.status(400).json({ error: 'Name and email are required' });
-    return;
-  }
-
   try {
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Database not connected');
+    }
+
+    const { name, email } = req.body;
+    if (!name || !email) {
+      res.status(400).json({ error: 'Name and email are required' });
+      return;
+    }
+
     console.log('Creating new user:', { name, email });
     const user = new User({ name, email });
     const savedUser = await user.save();
@@ -209,7 +249,10 @@ app.post('/users', async (req, res) => {
     res.status(201).json(savedUser);
   } catch (err) {
     console.error('Error inserting into database:', err);
-    res.status(500).json({ error: 'Database error: ' + err.message });
+    res.status(500).json({ 
+      error: 'Database error: ' + err.message,
+      details: err.stack
+    });
   }
 });
 
