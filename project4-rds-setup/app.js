@@ -94,12 +94,12 @@ app.get('/', (req, res) => {
                     const response = await fetch('/users');
                     const users = await response.json();
                     const usersList = document.getElementById('usersList');
-                    usersList.innerHTML = users.map(user => `
-                        <div class="bg-white p-4 rounded-lg shadow">
-                            <h3 class="font-semibold">${user.name}</h3>
-                            <p class="text-gray-600">${user.email}</p>
-                        </div>
-                    `).join('');
+                    usersList.innerHTML = users.map(user => 
+                        '<div class="bg-white p-4 rounded-lg shadow">' +
+                        '<h3 class="font-semibold">' + user.name + '</h3>' +
+                        '<p class="text-gray-600">' + user.email + '</p>' +
+                        '</div>'
+                    ).join('');
                 } catch (error) {
                     console.error('Error loading users:', error);
                 }
