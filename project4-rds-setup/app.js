@@ -3,11 +3,16 @@ const mysql = require('mysql2');
 const app = express();
 const port = 3000;
 
-// Database connection configuration
-const dbConfig = {
+// Initial connection config (without database)
+const initialConfig = {
   host: 'database-1.ctoc2qsmye19.us-east-1.rds.amazonaws.com',
   user: 'admin',
-  password: '12345678',
+  password: '12345678'
+};
+
+// Final connection config (with database)
+const dbConfig = {
+  ...initialConfig,
   database: 'database-1'
 };
 
@@ -17,36 +22,88 @@ console.log('Database configuration:', {
   database: dbConfig.database
 });
 
-// Create database connection
-const connection = mysql.createConnection(dbConfig);
+// Create initial connection without database
+const initialConnection = mysql.createConnection(initialConfig);
 
-// Connect to database
-connection.connect((err) => {
+// Connect and create database if it doesn't exist
+initialConnection.connect((err) => {
   if (err) {
-    console.error('Error connecting to database:', err);
+    console.error('Error connecting to MySQL server:', err);
     return;
   }
-  console.log('Connected to database successfully');
-  
-  // Test the connection with a simple query
-  connection.query('SHOW TABLES', (err, results) => {
+  console.log('Connected to MySQL server successfully');
+
+  // Create database if it doesn't exist
+  initialConnection.query('CREATE DATABASE IF NOT EXISTS `database-1`', (err) => {
     if (err) {
-      console.error('Error checking tables:', err);
+      console.error('Error creating database:', err);
       return;
     }
-    console.log('Available tables:', results);
-  });
-});
+    console.log('Database created or already exists');
 
-// Handle database connection errors
-connection.on('error', (err) => {
-  console.error('Database error:', err);
-  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-    console.log('Attempting to reconnect to database...');
-    connection.connect();
-  } else {
-    throw err;
-  }
+    // Create users table
+    initialConnection.query('USE `database-1`', (err) => {
+      if (err) {
+        console.error('Error selecting database:', err);
+        return;
+      }
+
+      const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL UNIQUE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `;
+
+      initialConnection.query(createTableQuery, (err) => {
+        if (err) {
+          console.error('Error creating users table:', err);
+          return;
+        }
+        console.log('Users table created or already exists');
+        
+        // Close initial connection
+        initialConnection.end();
+
+        // Create new connection with database
+        const connection = mysql.createConnection(dbConfig);
+        
+        // Connect to database
+        connection.connect((err) => {
+          if (err) {
+            console.error('Error connecting to database:', err);
+            return;
+          }
+          console.log('Connected to database successfully');
+          
+          // Test the connection with a simple query
+          connection.query('SHOW TABLES', (err, results) => {
+            if (err) {
+              console.error('Error checking tables:', err);
+              return;
+            }
+            console.log('Available tables:', results);
+          });
+        });
+
+        // Handle database connection errors
+        connection.on('error', (err) => {
+          console.error('Database error:', err);
+          if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+            console.log('Attempting to reconnect to database...');
+            connection.connect();
+          } else {
+            throw err;
+          }
+        });
+
+        // Make connection available globally
+        global.connection = connection;
+      });
+    });
+  });
 });
 
 // Middleware to parse JSON bodies
@@ -184,8 +241,13 @@ app.get('/health', (req, res) => {
 
 // Get all users
 app.get('/users', (req, res) => {
+  if (!global.connection) {
+    res.status(500).json({ error: 'Database connection not established' });
+    return;
+  }
+
   console.log('Fetching users...');
-  connection.query('SELECT * FROM users', (err, results) => {
+  global.connection.query('SELECT * FROM users', (err, results) => {
     if (err) {
       console.error('Error querying database:', err);
       res.status(500).json({ error: 'Database error: ' + err.message });
@@ -198,6 +260,11 @@ app.get('/users', (req, res) => {
 
 // Create a new user
 app.post('/users', (req, res) => {
+  if (!global.connection) {
+    res.status(500).json({ error: 'Database connection not established' });
+    return;
+  }
+
   const { name, email } = req.body;
   if (!name || !email) {
     res.status(400).json({ error: 'Name and email are required' });
@@ -205,7 +272,7 @@ app.post('/users', (req, res) => {
   }
 
   console.log('Creating new user:', { name, email });
-  connection.query(
+  global.connection.query(
     'INSERT INTO users (name, email) VALUES (?, ?)',
     [name, email],
     (err, results) => {
